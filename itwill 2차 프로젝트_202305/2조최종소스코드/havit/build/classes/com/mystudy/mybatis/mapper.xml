@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 태현/////////////////////////////////////////////////////// -->
+<mapper namespace="havit">
+
+	<select id="login" resultType="com.mystudy.vo.MemberVO" parameterType="string">
+		SELECT * FROM MEMBER WHERE ID=#{id} AND PW=#{pw}
+	</select>
+
+	<insert id="join" parameterType="com.mystudy.vo.MemberVO">
+		Insert into MEMBER 
+		(NICKNAME,ID,PW,GENDER,BIRTH,EMAIL,PHONE,AREA,ADDR,SIGNUPDATE) 
+		values 
+		(#{nickname},#{id},#{pw},#{gender},#{birth},#{email},#{phone},#{area},#{addr},SYSDATE)
+	</insert>
+
+	<insert id="hobby" parameterType="com.mystudy.vo.HobbyVO">
+	INSERT INTO HOBBY
+	(IDX,ID,CATEGORY)
+	VALUES
+	(HOBBY_SEQ.NEXTVAL,#{id},#{category})
+	</insert>
+
+	<delete id="deletehobby" parameterType="string">
+	DELETE FROM HOBBY WHERE ID = #{id}
+	</delete>
+	
+	<select id ="find" parameterType="string">
+	SELECT ID,PW FROM MEMBER WHERE ID=#{id};
+	</select>
+	
+	<!-- 정회 /////////////////////////////////////////////////////////-->
+	<select id="selectAll" resultType="MVO">
+		SELECT * FROM MEMBER
+	</select>
+
+	<select id="selectOne" parameterType="string" resultType="MVO">
+		SELECT * 
+		FROM MEMBER
+		WHERE ID = #{id}
+	</select>
+
+	<select id="hobbyList" parameterType="string" resultType="HVO">
+		SELECT * 
+		FROM HOBBY
+		WHERE ID = #{id}
+	</select>
+
+	<select id="BBSList" parameterType="int" resultType="BBSVO">
+		SELECT *
+		  FROM 
+		 (
+		  SELECT *
+		  FROM BBS
+		  ORDER BY HIT DESC
+		  )
+		 WHERE ROWNUM
+		<![CDATA[<=]]>
+		10
+		   AND CATEGORY = #{CATEGORY}
+	</select>
+
+
+	<!-- 혜인 /////////////////////////////////////////////////////////////-->
+	<!-- 페이지에 해당하는 게시글 조회 (검색추가) -->
+	<select id="BBSsearchPageList" resultType="BBSVO" parameterType="map">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, B.*
+		            FROM (SELECT *
+		            FROM BBS
+                    WHERE CATEGORY = #{category}
+		<if test="subject != null and subject != ''">
+		AND SUBJECT LIKE '%' || #{subject} || '%'
+		</if>
+		<if test="bcontent != null and bcontent != ''">
+		AND BCONTENT LIKE '%' || #{bcontent} || '%'
+		</if>
+		<if test="optday != null and optday != ''">
+		AND OPTDAY = #{optday}
+		</if>
+		<if test="optage != null and optage != ''">
+		AND OPTAGE = #{optage}
+		</if>
+		<if test="optgen != null and optgen != ''">
+		AND OPTGEN =  #{optgen} 
+		</if>
+		ORDER BY IDX DESC
+		            ) B
+		      )
+		WHERE R_NUM BETWEEN  #{begin} AND #{end}
+	</select>
+
+	<!--게시물 갯수 (검색추가)-->
+	<select id="searchTotalCount" resultType="int" parameterType="map">
+		SELECT COUNT(*) AS CNT FROM BBS WHERE CATEGORY = #{category}
+		<if test="subject != null and subject != ''">
+		AND SUBJECT LIKE '%' || #{subject} || '%'
+		</if>
+		<if test="bcontent != null and bcontent != ''">
+		AND BCONTENT LIKE '%' || #{bcontent} || '%'
+		</if>
+		<if test="optday != null and optday != ''">
+		AND OPTDAY = #{optday} 
+		</if>
+		<if test="optage != null and optage != ''">
+		AND OPTAGE = #{optage}
+		</if>
+		<if test="optgen != null and optgen != ''">
+		AND OPTGEN = #{optgen}
+		</if>
+	</select>
+
+	<!-- 페이지에 해당하는 게시글 조회 -->
+	<select id="BBSpageList" resultType="BBSVO" parameterType="int">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, B.*
+		            FROM (SELECT *
+		            FROM BBS
+                    WHERE CATEGORY = #{category}
+		            ORDER BY IDX DESC
+		            ) B
+		      )
+		WHERE R_NUM BETWEEN  #{begin} AND #{end}
+	</select>
+	<!-- 카테고리값으로 전체목록 -->
+	<select id="BBSTotList" resultType="BBSVO" parameterType="int">
+		SELECT IDX, SUBJECT, NICKNAME, BDATE, HIT, VIEWS FROM BBS
+		WHERE CATEGORY = #{category} ORDER BY BDATE DESC , IDX DESC
+	</select>
+	<!--게시물 갯수-->
+	<select id="totalCount" resultType="int" parameterType="int">
+		SELECT COUNT(*) AS CNT FROM BBS WHERE CATEGORY = #{category}
+	</select>
+	<!--게시글보이기-->
+	<select id="BBSView" resultType="BBSVO" parameterType="int">
+		SELECT * FROM BBS
+		WHERE IDX = #{idx}
+	</select>
+	<!--조회수 증가-->
+	<update id="viewsUp" parameterType="int">
+		UPDATE BBS SET VIEWS = (VIEWS+1) WHERE IDX = #{idx}
+	</update>
+
+	<!-- 정권 ////////////////////////////////////////////////////////////////-->
+
+	<insert id="insert" parameterType="BBSVO">
+
+INSERT INTO BBS(IDX, NICKNAME, BCONTENT, BDATE, HIT, SUBJECT,CATEGORY, OPTDAY, OPTAGE, OPTGEN, VIEWS)
+VALUES (BBS_SEQ.NEXTVAL,#{nickname},#{bContent},SYSDATE,0,#{subject},#{category},#{optDay},#{optAge},#{optGen},0)
+ </insert>
+
+	<select id="selectone" parameterType="string" resultType="BBSVO">
+		SELECT * FROM BBS 
+		WHERE NICKNAME = #{nickname}
+</select>
+
+	<select id="selectoneIdx" parameterType="int" resultType="BBSVO">
+		SELECT * FROM BBS 
+		WHERE IDX = #{idx}
+</select>
+
+
+	<select id="selectBidx" parameterType="int" resultType="BBSVO">
+SELECT BBS_SEQ.CURRVAL AS IDX FROM DUAL
+
+</select>
+
+	<update id="update" parameterType="BBSVO">
+UPDATE BBS
+   		SET SUBJECT = #{subject}
+    	, BCONTENT = #{bContent}
+    	, OPTDAY = #{optDay}
+    	, OPTAGE = #{optAge}
+    	, OPTGEN = #{optGen}
+WHERE IDX = #{idx}
+
+</update>
+
+	<delete id="delete" parameterType="int">
+DELETE FROM BBS
+WHERE IDX= ${idx}
+</delete>
+
+	<!-- 댓글 insert -->
+	<insert id="insertComments" parameterType="CommentsVO">
+INSERT INTO COMMENTS(CIDX, NICKNAME, COMMENTS, CDATE, IDX)
+VALUES (COMMENTS_SEQ.NEXTVAL,#{nickname},#{comments},SYSDATE,#{idx})
+ </insert>
+
+	<!-- 댓글 조회 -->
+	<select id="selectComments" parameterType="int" resultType="CommentsVO">
+SELECT NICKNAME,COMMENTS,CDATE FROM COMMENTS
+WHERE IDX = #{idx}
+</select>
+
+	<!-- 댓글수 조회 -->
+	<select id="selectCommentsCnt" parameterType="int" resultType="int">
+	SELECT COUNT(*) FROM COMMENTS WHERE IDX= #{idx}
+	</select>
+	
+	<!-- 댓글 수정, 삭제 -->
+	<update id="comment_update" parameterType="BBSVO">
+	UPDATE COMMENTS
+	   		SET COMMENTS = #{comments}
+	    	   ,CDATE = SYSDATE
+	WHERE CIDX = #{cidx}
+	
+	</update>
+	
+		<delete id="delete_comments" parameterType="String">
+	DELETE FROM COMMENTS
+	WHERE CIDX= ${cidx}
+	</delete>
+
+	<!-- 푸른 ////////////////////////////////////////////////////////////////////////-->
+
+	<!-- 전체 게시글 갯수 조회 -->
+	<select id="btotalCount" parameterType="String" resultType="int">
+		SELECT COUNT(*) AS CNT FROM BBS WHERE NICKNAME = #{nickname}
+	</select>
+
+
+	<!-- 페이지용 -->
+	<select id="pagelist" resultType="bbsVO" parameterType="com.mystudy.vo.CpageVO">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, B.*
+		      FROM (SELECT *
+		            FROM BBS
+                    WHERE NICKNAME = #{nickname}
+		           ) B
+		     )
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<select id="pagelistc" resultType="commentsVO" parameterType="com.mystudy.vo.CpageVO">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, B.*
+		      FROM (SELECT *
+		            FROM COMMENTS
+                    WHERE NICKNAME = #{nickname}
+		           ) B
+		     )
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+	<!-- 전체 게시글 갯수 조회 -->
+	<select id="CtotalCount" parameterType="String" resultType="int">
+		SELECT COUNT(*) AS CNT FROM COMMENTS WHERE NICKNAME = #{nickname}
+	</select>
+
+	<!-- 페이지에 해당하는 게시글 조회 -->
+	<select id="clist" resultType="commentsVO" parameterType="map">
+		SELECT *
+		FROM (SELECT ROWNUM R_NUM, C.*
+		      FROM (SELECT *
+		            FROM COMMENTS
+		            ORDER BY CIDX DESC
+		           ) C
+		     )
+		WHERE R_NUM BETWEEN #{begin} AND #{end}
+	</select>
+
+
+	<!-- mmember 테이블에서 select-->
+
+	<select id="out_member_pr" parameterType="String" resultType="MVO">
+SELECT*
+FROM MEMBER
+WHERE NICKNAME= #{nickname}
+
+</select>
+
+	<!-- member 테이블에서 update-->
+	<update id="update_member_pr" parameterType="MVO">
+	UPDATE MEMBER
+   SET NICKNAME = #{nickname},
+       PW = #{pw},
+       GENDER = #{gender},
+       BIRTH = #{birth},
+       ADDR = #{addr},
+PHONE = #{phone},
+AREA = #{area}
+    WHERE ID = #{id}
+	
+	</update>
+
+	<!-- member 테이블에서 dlelete-->
+	<delete id="delete_member_pr" parameterType="MVO">
+	
+	DELETE MEMBER
+WHERE ID = #{id} AND PW = #{pw}
+	
+	</delete>
+
+	<!-- comments 테이블에서 select-->
+	<select id="select_comments_pr" parameterType="String" resultType="commentsVO">
+	
+	SELECT *
+	FROM COMMENTS
+	WHERE NICKNAME = #{nickname}
+	
+	</select>
+
+	<select id="select_bbs_pr" parameterType="String" resultType="BBSVO">
+	
+	SELECT *
+	FROM BBS
+	WHERE NICKNAME = #{nickname}
+	
+	</select>
+	<!-- hobby 테이블에서 select리스트-->
+	<select id="select_hobby" parameterType="String" resultType="com.mystudy.vo.HobbyVO">
+
+	SELECT*
+	FROM HOBBY
+	WHERE ID = #{id}
+
+	</select>
+
+
+	<!--좋아요 버튼 구현을 위한 test -->
+	<update id="like" parameterType="int">
+UPDATE BBS
+SET HIT = HIT + 1
+WHERE  IDX = #{idx}
+
+</update>
+
+	<update id="unlike" parameterType="int">
+UPDATE BBS
+SET HIT = HIT - 1
+WHERE  IDX = #{idx}
+
+</update>
+
+
+
+</mapper>
